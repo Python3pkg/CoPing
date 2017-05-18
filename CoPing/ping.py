@@ -14,6 +14,8 @@ import socket
 import struct
 import sys
 import time
+import six
+from six.moves import zip
 
 
 if sys.platform.startswith("win32"):
@@ -138,7 +140,7 @@ class Ping(object):
         Handle print_exit via signals.
         """
         self.print_exit()
-        print("\n(Terminated with signal %d)\n" % (signum))
+        six.print_(("\n(Terminated with signal %d)\n" % (signum)))
         sys.exit(0)
 
     def setup_signal_handler(self):
@@ -160,14 +162,15 @@ class Ping(object):
         """
         try: # One could use UDP here, but it's obscure
             current_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.getprotobyname("icmp"))
-        except socket.error as (errno, msg):
+        except socket.error as xxx_todo_changeme:
+            (errno, msg) = xxx_todo_changeme.args
             if errno == 1:
                 # Operation not permitted - Add more information to traceback
                 etype, evalue, etb = sys.exc_info()
                 evalue = etype(
                     "%s - Note that ICMP messages can only be send from processes running as root." % evalue
                 )
-                raise etype, evalue, etb
+                raise etype(evalue).with_traceback(etb)
             raise # raise the original error
 
         send_time = self.send_one_ping(current_socket)
@@ -225,7 +228,7 @@ class Ping(object):
         try:
             current_socket.sendto(packet, (self.destination, 1)) # Port number is irrelevant for ICMP
         except socket.error as e:
-            print("General failure (%s)" % (e.args[1]))
+            six.print_(("General failure (%s)" % (e.args[1])))
             current_socket.close()
             return
 
@@ -279,9 +282,9 @@ class Ping(object):
 
     def print_header(self, iterations="unlimited"):
         print("Type escape sequence CTRL + C to abort.")
-        print("Sending %s, %s-byte ICMP Echos to %s, timeout is %s milliseconds:" % (
+        six.print_(("Sending %s, %s-byte ICMP Echos to %s, timeout is %s milliseconds:" % (
             iterations, self.packet_size, self.destination, self.timeout
-        ))
+        )))
 
     def print_statistics(self, interrupted=False):
         if interrupted and self.send_count >= self.receive_count:
@@ -289,11 +292,11 @@ class Ping(object):
         lost_count = self.send_count - self.receive_count
         lost_rate = float(lost_count) / self.send_count * 100.0
 
-        print("%d packets transmitted, %d packets received, %0.1f%% packet loss" % (
+        six.print_(("%d packets transmitted, %d packets received, %0.1f%% packet loss" % (
             self.send_count, self.receive_count, lost_rate
-        ))
+        )))
 
         if self.receive_count > 0:
-            print("round-trip (ms)  min/avg/max = %0.3f/%0.3f/%0.3f\n" % (
+            six.print_(("round-trip (ms)  min/avg/max = %0.3f/%0.3f/%0.3f\n" % (
                 self.min_time, self.total_time / self.receive_count, self.max_time
-            ))
+            )))
